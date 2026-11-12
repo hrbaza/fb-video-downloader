@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SaveFB — Keep the Facebook videos you love</title>
+  <meta name="description" content="Paste a public Facebook video or reel link and save it as an HD MP4. Free, no app, no account.">
+  <meta name="theme-color" content="#05070d">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%2305070d'/%3E%3Cpath d='M16 7v13m-6-6 6 6 6-6M9 25h14' stroke='%238fb8ff' stroke-width='2.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    html, body { background: #05070d; }
+
+    :root {
+      --bg: #05070d;
+      --ink: #ffffff;
+      --muted: rgba(255, 255, 255, .66);
+      --faint: rgba(255, 255, 255, .54);
+      --hair: rgba(255, 255, 255, .1);
+      --accent: #8fb8ff;
+      --danger: #ffb4b4;
+      --serif: "Instrument Serif", Georgia, serif;
+      --sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+      --ease: cubic-bezier(.22, 1, .36, 1);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; color: var(--ink); font-family: var(--sans); font-size: 16px; line-height: 1.6;
+      -webkit-font-smoothing: antialiased; overflow-x: hidden;
+    }
+    a { color: inherit; text-decoration: none; }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+    .wrap { width: 100%; max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+    /* ---------- Liquid glass ---------- */
+    .glass {
+      position: relative; overflow: hidden;
+      background: rgba(255, 255, 255, .035);
+      background-blend-mode: luminosity;
+      -webkit-backdrop-filter: blur(14px) saturate(140%);
+      backdrop-filter: blur(14px) saturate(140%);
+      box-shadow: inset 0 1px 1px rgba(255, 255, 255, .12), 0 20px 60px -20px rgba(0, 0, 0, .6);
+    }
+    .glass::before {
+      content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1.4px; pointer-events: none;
+      background: linear-gradient(180deg, rgba(255,255,255,.45) 0%, rgba(255,255,255,.15) 20%, rgba(255,255,255,0) 40%,
+                                          rgba(255,255,255,0) 60%, rgba(255,255,255,.15) 80%, rgba(255,255,255,.45) 100%);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor; mask-composite: exclude;
+    }
+
+    /* ---------- Hero ---------- */
+    .hero { position: relative; min-height: 100svh; display: flex; flex-direction: column; isolation: isolate; }
+    .hero video {
+      position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 60% 50%;
+      z-index: -2; opacity: 0;
+    }
+    .hero::after {
+      content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+      background:
+        radial-gradient(ellipse 50% 42% at 50% 52%, rgba(5, 7, 13, .78) 0%, rgba(5, 7, 13, .35) 60%, rgba(5, 7, 13, 0) 100%),
+        linear-gradient(180deg, rgba(5, 7, 13, .55) 0%, rgba(5, 7, 13, 0) 22%, rgba(5, 7, 13, 0) 70%, #05070d 100%);
+    }
+
+    nav { padding: 22px 0; }
+    nav .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .logo { display: inline-flex; align-items: center; gap: 10px; font-family: var(--serif); font-size: 28px; letter-spacing: -.02em; line-height: 1; }
+    .logo svg { color: var(--accent); }
+    .nav-links { display: flex; align-items: center; gap: 32px; font-size: 14px; font-weight: 500; }
+    .nav-links a { color: var(--muted); transition: color .2s; }
+    .nav-links a:hover { color: var(--ink); }
+    .pill-btn {
+      display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; padding: 10px 20px;
+      font-size: 14px; font-weight: 500; color: var(--ink) !important; transition: transform .25s var(--ease), background .2s;
+    }
+    .pill-btn:hover { transform: scale(1.03); background: rgba(255, 255, 255, .08); }
+
+    .hero-body {
+      flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+      padding: 32px 0 96px;
+    }
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 10px; border-radius: 999px; padding: 8px 16px;
+      font-size: 13px; font-weight: 500; color: rgba(255, 255, 255, .85); letter-spacing: .01em;
+    }
+    .eyebrow i { width: 6px; height: 6px; border-radius: 50%; background: #5ee39b; box-shadow: 0 0 0 4px rgba(94, 227, 155, .18); }
+    h1 {
+      font-family: var(--serif); font-weight: 400; margin: 28px 0 20px;
+      font-size: clamp(52px, 8.4vw, 120px); line-height: .94; letter-spacing: -.035em;
+    }
+    h1 em { font-style: italic; color: var(--accent); padding-right: .04em; }
+    .sub { margin: 0 auto; max-width: 520px; color: rgba(255, 255, 255, .78); font-size: clamp(16px, 1.6vw, 18px); line-height: 1.6; text-wrap: balance; text-shadow: 0 1px 18px rgba(5, 7, 13, .9), 0 0 2px rgba(5, 7, 13, .6); }
+    h1 { text-shadow: 0 2px 40px rgba(5, 7, 13, .55); }
+
+    /* ---------- Tool ---------- */
+    .tool { width: 100%; max-width: 660px; margin: 40px auto 0; text-align: left; }
+    .bar {
+      display: flex; align-items: center; gap: 6px; border-radius: 999px; padding: 8px 8px 8px 22px;
+      transition: box-shadow .25s;
+    }
+    .bar:focus-within { box-shadow: inset 0 1px 1px rgba(255,255,255,.12), 0 0 0 4px rgba(143, 184, 255, .22), 0 20px 60px -20px rgba(0,0,0,.6); }
+    .bar > svg { color: var(--faint); flex-shrink: 0; }
+    .bar input {
+      flex: 1; min-width: 0; height: 48px; border: 0; outline: none; background: transparent; color: var(--ink);
+      font: inherit; font-size: 16px; padding: 0 6px;
+    }
+    .bar input::placeholder { color: var(--faint); }
+    .bar input:focus-visible { outline: none; }
+    .ghost {
+      height: 44px; padding: 0 14px; border: 0; border-radius: 999px; background: transparent; color: var(--muted);
+      font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+      transition: color .2s, background .2s;
+    }
+    .ghost:hover { color: var(--ink); background: rgba(255, 255, 255, .07); }
+    .go {
+      height: 48px; padding: 0 22px 0 24px; border: 0; border-radius: 999px; background: #fff; color: #05070d;
+      font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+      transition: transform .25s var(--ease), box-shadow .25s; white-space: nowrap;
+      box-shadow: 0 10px 30px -10px rgba(143, 184, 255, .7);
+    }
+    .go:hover { transform: scale(1.03); }
+    .go:disabled { cursor: wait; transform: none; opacity: .85; }
+    .go .spin { display: none; width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(5,7,13,.25); border-top-color: #05070d; animation: spin .7s linear infinite; }
+    .go.loading .spin { display: inline-block; }
+    .go.loading .arrow { display: none; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .supports { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px 20px; margin-top: 16px; font-size: 13px; color: var(--faint); }
+    .supports span { display: inline-flex; align-items: center; gap: 7px; }
+    .supports span::before { content: ""; width: 4px; height: 4px; border-radius: 50%; background: var(--accent); opacity: .8; }
+
+    .msg {
+      display: none; margin-top: 14px; border-radius: 18px; padding: 14px 18px; gap: 10px; align-items: flex-start;
+      background: rgba(255, 90, 90, .1); color: var(--danger); font-size: 14px; font-weight: 500;
+    }
+    .msg.show { display: flex; animation: rise .5s var(--ease) both; }
+
+    .panel, .skel { background: rgba(8, 11, 20, .62); -webkit-backdrop-filter: blur(20px) saturate(140%); backdrop-filter: blur(20px) saturate(140%); }
+    .panel { display: none; margin-top: 16px; border-radius: 28px; padding: 16px; }
+    .panel.show { display: grid; grid-template-columns: 220px 1fr; gap: 20px; animation: rise .6s var(--ease) both; }
+    .thumb {
+      position: relative; aspect-ratio: 16 / 10; border-radius: 18px; overflow: hidden; align-self: start;
+      background: radial-gradient(120% 120% at 20% 0%, #1d3b73 0%, #0b1222 60%); display: grid; place-items: center; color: rgba(255,255,255,.8);
+    }
+    .thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .thumb .dur {
+      position: absolute; right: 10px; bottom: 10px; padding: 3px 9px; border-radius: 999px; font-size: 12px; font-weight: 600;
+      background: rgba(5, 7, 13, .72); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+    }
+    .meta { min-width: 0; padding-top: 4px; }
+    .meta h2 { margin: 0; font-family: var(--serif); font-weight: 400; font-size: 26px; line-height: 1.1; letter-spacing: -.01em; overflow-wrap: anywhere; }
+    .meta .hint { margin: 6px 0 14px; font-size: 13px; color: var(--faint); }
+    .qs { display: flex; flex-direction: column; gap: 8px; }
+    .q {
+      display: flex; align-items: center; gap: 14px; padding: 8px 8px 8px 10px; border-radius: 999px;
+      background: rgba(255, 255, 255, .05); border: 1px solid var(--hair); transition: background .2s, border-color .2s, transform .25s var(--ease);
+    }
+    .q:hover { background: rgba(255, 255, 255, .09); border-color: rgba(143, 184, 255, .45); transform: translateX(2px); }
+    .q .tag {
+      min-width: 48px; text-align: center; padding: 5px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; letter-spacing: .04em;
+      background: rgba(255, 255, 255, .1);
+    }
+    .q .tag.hd { background: var(--accent); color: #05070d; }
+    .q .lbl { flex: 1; min-width: 0; font-size: 14px; font-weight: 500; }
+    .q .lbl small { color: var(--faint); font-weight: 400; margin-left: 6px; }
+    .q .dl { width: 40px; height: 40px; border-radius: 50%; background: #fff; color: #05070d; display: grid; place-items: center; flex-shrink: 0; }
+
+    .skel { display: none; margin-top: 16px; border-radius: 28px; padding: 16px; }
+    .skel.show { display: grid; grid-template-columns: 220px 1fr; gap: 20px; }
+    .sk { border-radius: 14px; background: linear-gradient(90deg, rgba(255,255,255,.05) 25%, rgba(255,255,255,.12) 50%, rgba(255,255,255,.05) 75%); background-size: 200% 100%; animation: shimmer 1.3s linear infinite; }
+    @keyframes shimmer { to { background-position: -200% 0; } }
+
+    /* ---------- Sections ---------- */
+    section.band { padding: 120px 0 0; }
+    .label { font-size: 12px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); }
+    h3.big {
+      font-family: var(--serif); font-weight: 400; margin: 14px 0 0;
+      font-size: clamp(38px, 5.2vw, 68px); line-height: 1; letter-spacing: -.03em; max-width: 720px;
+    }
+    h3.big em { font-style: italic; color: var(--muted); }
+
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; margin-top: 64px; }
+    .step { border-top: 1px solid var(--hair); padding-top: 24px; }
+    .step .n { font-family: var(--serif); font-size: 56px; line-height: 1; color: var(--accent); letter-spacing: -.02em; }
+    .step h4 { margin: 18px 0 8px; font-size: 18px; font-weight: 600; letter-spacing: -.01em; }
+    .step p { margin: 0; color: var(--muted); font-size: 15px; max-width: 320px; }
+
+    .faq-grid { display: grid; grid-template-columns: 1fr 1.3fr; gap: 64px; align-items: start; }
+    .faq { border-top: 1px solid var(--hair); }
+    details { border-bottom: 1px solid var(--hair); }
+    summary {
+      list-style: none; cursor: pointer; padding: 22px 0; display: flex; justify-content: space-between; align-items: center; gap: 16px;
+      font-size: 17px; font-weight: 500;
+    }
+    summary::-webkit-details-marker { display: none; }
+    summary .pm { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--hair); display: grid; place-items: center; flex-shrink: 0; transition: transform .3s var(--ease), border-color .2s; }
+    details[open] summary .pm { transform: rotate(45deg); border-color: var(--accent); color: var(--accent); }
+    details p { margin: -6px 0 22px; color: var(--muted); font-size: 15px; max-width: 560px; }
+
+    footer { margin-top: 120px; border-top: 1px solid var(--hair); padding: 32px 0 40px; font-size: 13px; color: var(--faint); }
+    footer .wrap { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px 24px; }
+    footer .logo { font-size: 22px; color: var(--ink); }
+
+    /* ---------- Motion ---------- */
+    @keyframes rise { from { opacity: 0; transform: translateY(18px); filter: blur(6px); } to { opacity: 1; transform: none; filter: none; } }
+    .r { animation: rise .9s var(--ease) both; }
+    .r1 { animation-delay: .1s; } .r2 { animation-delay: .22s; } .r3 { animation-delay: .34s; } .r4 { animation-delay: .46s; }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0s !important; transition-duration: .01ms !important; }
+    }
+
+    /* ---------- Responsive ---------- */
+    @media (max-width: 860px) {
+      .nav-links a:not(.pill-btn) { display: none; }
+      .steps { grid-template-columns: 1fr; gap: 0; margin-top: 40px; }
+      .step { padding: 24px 0 28px; }
+      .faq-grid { grid-template-columns: 1fr; gap: 32px; }
+      section.band { padding-top: 88px; }
+    }
+    @media (max-width: 600px) {
+      .wrap { padding: 0 16px; }
+      nav { padding: 16px 0; }
+      .hero video { object-position: 68% 50%; }
+      .hero-body { padding: 24px 0 64px; }
+      h1 { margin: 22px 0 16px; }
+      .bar { flex-wrap: wrap; border-radius: 26px; padding: 8px; }
+      .bar > svg { display: none; }
+      .bar input { flex: 1 1 100%; padding: 0 12px; }
+      .ghost { flex: 0 0 auto; }
+      .go { flex: 1 1 auto; justify-content: center; }
+      .sub { max-width: 320px; font-size: 15.5px; }
+      .panel { padding: 12px; border-radius: 24px; }
+      .panel.show { grid-template-columns: 104px 1fr; gap: 6px 14px; align-items: center; }
+      .panel .meta { display: contents; }
+      .panel .thumb { grid-row: 1 / span 2; aspect-ratio: 1; border-radius: 16px; }
+      .panel .thumb > svg { width: 28px; height: 28px; }
+      .panel .thumb .dur { right: 6px; bottom: 6px; font-size: 11px; padding: 2px 7px; }
+      .meta h2 { font-size: 21px; align-self: end; }
+      .meta .hint { margin: 0; align-self: start; }
+      .qs { grid-column: 1 / -1; margin-top: 8px; }
+      .skel.show { grid-template-columns: 1fr; }
+      footer { margin-top: 88px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <video id="bg" muted playsinline preload="auto" aria-hidden="true"
+      src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260508_064122_c4750c0e-7476-4b44-94a2-a85a65c63bf2.mp4"></video>
+
+    <nav>
+      <div class="wrap">
+        <a class="logo" href="#" aria-label="SaveFB home">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+          SaveFB
+        </a>
+        <div class="nav-links">
+          <a href="#how">How it works</a>
+          <a href="#faq">FAQ</a>
+          <a href="#top" class="pill-btn glass" id="navCta">Paste a link</a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="wrap hero-body" id="top">
+      <span class="eyebrow glass r"><i></i>Free · No sign-up · No watermark</span>
+      <h1 class="r r1">Keep the videos<br>you <em>love.</em></h1>
+      <p class="sub r r2">Paste a Facebook video or reel link and get a clean HD MP4 in seconds. No app, no account.</p>
+
+      <div class="tool r r3">
+        <form id="form" class="bar glass" autocomplete="off">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
+          <input id="url" type="url" required placeholder="https://www.facebook.com/…" aria-label="Facebook video link">
+          <button type="button" class="ghost" id="pasteBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
+            Paste
+          </button>
+          <button type="submit" class="go" id="goBtn">
+            <span class="spin"></span>
+            <span class="txt">Download</span>
+            <svg class="arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+          </button>
+        </form>
+
+        <div class="supports r r4"><span>Videos</span><span>Reels</span><span>Watch</span><span>fb.watch links</span></div>
+
+        <div class="msg" id="msg" role="alert">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:2px" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+          <span id="msgText"></span>
+        </div>
+
+        <div class="skel glass" id="skel" aria-hidden="true">
+          <div class="sk" style="aspect-ratio:16/10;border-radius:18px"></div>
+          <div>
+            <div class="sk" style="height:22px;width:78%;margin:6px 0 10px"></div>
+            <div class="sk" style="height:12px;width:38%;margin-bottom:18px"></div>
+            <div class="sk" style="height:56px;border-radius:999px;margin-bottom:8px"></div>
+            <div class="sk" style="height:56px;border-radius:999px"></div>
+          </div>
+        </div>
+
+        <section class="panel glass" id="result" aria-live="polite">
+          <div class="thumb">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+            <img id="thumb" alt="" hidden>
+            <span class="dur" id="duration" hidden></span>
+          </div>
+          <div class="meta">
+            <h2 id="title"></h2>
+            <p class="hint">Pick a quality to save the MP4</p>
+            <div class="qs" id="formats"></div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="band" id="how">
+      <div class="wrap">
+        <div class="label">How it works</div>
+        <h3 class="big">Three steps. <em>No detours.</em></h3>
+        <div class="steps">
+          <div class="step">
+            <div class="n">01</div>
+            <h4>Copy the link</h4>
+            <p>On Facebook, tap Share on the video and choose Copy link.</p>
+          </div>
+          <div class="step">
+            <div class="n">02</div>
+            <h4>Paste it above</h4>
+            <p>Drop the link in the box and press Download. We find every available quality.</p>
+          </div>
+          <div class="step">
+            <div class="n">03</div>
+            <h4>Save the MP4</h4>
+            <p>Choose HD or SD. The file goes straight to your Downloads folder.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="band" id="faq">
+      <div class="wrap faq-grid">
+        <div>
+          <div class="label">FAQ</div>
+          <h3 class="big">Questions, <em>answered.</em></h3>
+        </div>
+        <div class="faq">
+          <details>
+            <summary>Can I download private videos?<span class="pm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span></summary>
+            <p>No. Only public videos work. Videos from private profiles or closed groups need a login, so they can't be fetched.</p>
+          </details>
+          <details>
+            <summary>Where does the video get saved?<span class="pm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span></summary>
+            <p>In your browser's usual Downloads folder. On a phone, look in the Files or Downloads app.</p>
+          </details>
+          <details>
+            <summary>Why don't I see an HD option?<span class="pm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span></summary>
+            <p>Some videos were only uploaded in standard quality, so Facebook only offers SD for them.</p>
+          </details>
+          <details>
+            <summary>Does it work with reels?<span class="pm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span></summary>
+            <p>Yes. Reels, Watch videos, page videos and fb.watch short links all work.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <a class="logo" href="#">SaveFB</a>
+      <span>Only save videos you have the right to keep. Not affiliated with Facebook or Meta.</span>
+    </div>
+  </footer>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    // ---- Background video: seamless fade loop ----
+    (() => {
+      const v = $("bg");
+      const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+      let raf = 0, fadingOut = false;
+      const fadeTo = (target, ms) => {
+        cancelAnimationFrame(raf);
+        const from = parseFloat(v.style.opacity || 0), t0 = performance.now();
+        const step = (t) => {
+          const k = Math.min(1, (t - t0) / ms);
+          v.style.opacity = from + (target - from) * k;
+          if (k < 1) raf = requestAnimationFrame(step);
+        };
+        raf = requestAnimationFrame(step);
+      };
+      const start = () => { v.play().then(() => fadeTo(1, 700)).catch(() => fadeTo(1, 700)); };
+      if (reduce) { v.addEventListener("loadeddata", () => { v.currentTime = 2; fadeTo(1, 1); }, { once: true }); return; }
+      v.addEventListener("canplay", start, { once: true });
+      v.addEventListener("timeupdate", () => {
+        if (!fadingOut && v.duration && v.duration - v.currentTime < 0.6) { fadingOut = true; fadeTo(0, 500); }
+      });
+      v.addEventListener("ended", () => {
+        v.style.opacity = 0;
+        setTimeout(() => { v.currentTime = 0; fadingOut = false; v.play(); fadeTo(1, 600); }, 100);
+      });
+    })();
+
+    // ---- Downloader ----
+    const form = $("form"), goBtn = $("goBtn"), msg = $("msg"), panel = $("result"), skel = $("skel");
+
+    $("navCta").addEventListener("click", (e) => {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      $("url").focus({ preventScroll: true });
+    });
+
+    $("pasteBtn").onclick = async () => {
+      try { $("url").value = (await navigator.clipboard.readText()).trim(); }
+      catch {}
+      $("url").focus();
+    };
+
+    const fmtSize = (b) => !b ? "" : b > 1e6 ? (b / 1e6).toFixed(1) + " MB" : Math.round(b / 1e3) + " KB";
+    const fmtTime = (s) => {
+      if (!s) return "";
+      s = Math.round(s);
+      const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = String(s % 60).padStart(2, "0");
+      return h ? `${h}:${String(m).padStart(2, "0")}:${sec}` : `${m}:${sec}`;
+    };
+    const isHd = (l) => /hd|720|1080|1440|2160/i.test(l);
+
+    function showError(text) { $("msgText").textContent = text; msg.classList.add("show"); }
+    function setLoading(on) {
+      goBtn.disabled = on; goBtn.classList.toggle("loading", on);
+      goBtn.querySelector(".txt").textContent = on ? "Fetching" : "Download";
+      skel.classList.toggle("show", on);
+    }
+
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      const url = $("url").value.trim();
+      msg.classList.remove("show"); panel.classList.remove("show");
+      setLoading(true);
+      try {
+        const res = await fetch("/api/info?url=" + encodeURIComponent(url));
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || "Something went wrong. Please try again.");
+
+        $("title").textContent = data.title;
+        const img = $("thumb");
+        if (data.thumbnail) { img.src = data.thumbnail; img.hidden = false; img.onerror = () => (img.hidden = true); }
+        else img.hidden = true;
+        const dur = $("duration");
+        dur.textContent = fmtTime(data.duration); dur.hidden = !data.duration;
+
+        const box = $("formats"); box.innerHTML = "";
+        data.formats.forEach((f) => {
+          const a = document.createElement("a");
+          a.className = "q";
+          a.href = `/api/download?url=${encodeURIComponent(url)}&format_id=${encodeURIComponent(f.format_id)}`;
+          a.innerHTML = `<span class="tag"></span><span class="lbl"><span class="name"></span><small></small></span>
+            <span class="dl"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v12"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/></svg></span>`;
+          const tag = a.querySelector(".tag");
+          tag.textContent = f.label; if (isHd(f.label)) tag.classList.add("hd");
+          a.querySelector(".name").textContent = isHd(f.label) ? "High quality" : "Standard quality";
+          a.querySelector("small").textContent = [f.ext.toUpperCase(), fmtSize(f.filesize)].filter(Boolean).join(" · ");
+          a.setAttribute("aria-label", `Download ${f.label} ${f.ext}`);
+          box.appendChild(a);
+        });
+        panel.classList.add("show");
+      } catch (err) {
+        showError(err.message || "Network error. Is the server running?");
+      } finally {
+        setLoading(false);
+      }
+    };
+  </script>
+</body>
+</html>
